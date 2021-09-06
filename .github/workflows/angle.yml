@@ -1,0 +1,106 @@
+name: Build ANGLE Libs
+on:
+  workflow_dispatch:
+
+env:
+  ANGLE_VERSION: 4606
+
+jobs:
+  angle-build:
+    name: ${{ matrix.name }} (${{ matrix.arch }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: "Windows", os: "windows-2019", arch: "x86", extension: "dll" }
+          - { name: "Windows", os: "windows-2019", arch: "x64", extension: "dll" }
+          - { name: "macOS", os: "macos-10.15", arch: "x64", extension: "dylib" }
+          - { name: "macOS", os: "macos-11.0", arch: "arm64", extension: "dylib" }
+          - { name: "Linux", os: "ubuntu-latest", arch: "x64", extension: "so" }
+
+    steps:
+    - name: Clone ANGLE
+      run: |
+        git clone --branch chromium/${{ env.ANGLE_VERSION }} https://github.com/google/angle.git
+      shell: bash
+
+    - name: Install Depot Tools
+      run: |
+        git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+      shell: bash
+
+    - name: Fetch Cached third_party
+      id: third-party-cache
+      uses: actions/cache@v2
+      with:
+        path: angle/third_party/
+        key: thirdparty-${{ env.ANGLE_VERSION }}-${{ matrix.os }}
+
+    - name: Fetch Cached angle/tools
+      id: angle-tools-cache
+      uses: actions/cache@v2
+      with:
+        path: angle/tools/
+        key: angletools-${{ env.ANGLE_VERSION }}-${{ matrix.os }}
+
+    - name: Compile
+      run: >
+        export PATH=$PWD/depot_tools:$PATH
+
+        cd angle
+
+        python ./scripts/bootstrap.py
+
+        gclient sync
+
+        gn gen out/${{ matrix.arch }} --args='
+        angle_enable_d3d11=${{ contains(runner.os, 'Windows') }}
+        angle_enable_d3d9=${{ contains(runner.os, 'Windows') }}
+        angle_enable_metal=${{ contains(runner.os, 'macOS') }}
+        angle_enable_vulkan=${{ contains(runner.os, 'Linux') || contains(runner.os, 'macOS') }}
+        angle_enable_glsl=true
+        angle_enable_gl=true
+        angle_enable_essl=false
+        is_debug=false
+        dcheck_always_on=false
+        target_cpu="${{ matrix.arch }}"'
+
+        ninja -C out/${{ matrix.arch }} libEGL libGLESv2
+      env:
+        DEPOT_TOOLS_WIN_TOOLCHAIN: 0
+      shell: bash
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v2
+      if: success()
+      with:
+        name: ${{ matrix.name }}-${{ matrix.arch }}-${{ matrix.extension }}
+        path: |
+          angle/out/${{ matrix.arch }}/libGLESv2.${{ matrix.extension }}
+          angle/out/${{ matrix.arch }}/libEGL.${{ matrix.extension }}
+        if-no-files-found: error
+
+  angle-upload:
+    name: Push ANGLE Libraries
+    needs: [angle-build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v2
+        with:
+          ref: master
+
+      - name: Download Artifacts From Build
+        uses: actions/download-artifact@v2
+        with:
+          path: angle/
+
+      - name: Commit & Push ANGLE Libraries
+        uses: actions-js/push@master
+        with:
+          branch: master
+          message: "(GHA) built and updated ANGLE to ${{ env.ANGLE_VERSION }}"
+          author_name: "Nitori Kawashiro [bot]"
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
