@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
 
 env:
-  ANGLE_VERSION: 4606
+  ANGLE_VERSION: 4638
 
 jobs:
   angle-build:
