@@ -2,9 +2,6 @@ name: Build ANGLE Libs
 on:
   workflow_dispatch:
 
-env:
-  ANGLE_VERSION: 4638
-
 jobs:
   angle-build:
     name: ${{ matrix.name }} (${{ matrix.arch }})
@@ -20,6 +17,14 @@ jobs:
           - { name: "Linux", os: "ubuntu-latest", arch: "x64", extension: "so" }
 
     steps:
+    - name: Checkout Repo
+      uses: actions/checkout@v2
+      with:
+        ref: master
+
+    - name: Set vars
+      run: echo "ANGLE_VERSION=$(cat $PWD/version)" >> $GITHUB_ENV
+
     - name: Clone ANGLE
       run: |
         git clone --branch chromium/${{ env.ANGLE_VERSION }} https://github.com/google/angle.git

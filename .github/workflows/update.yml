@@ -1,0 +1,33 @@
+name: Update ANGLE to latest version
+on:
+  workflow_dispatch:
+
+jobs:
+  angle-update:
+    name: Update ANGLE branch
+    runs-on: "ubuntu-latest"
+    steps:
+    - name: Checkout Repo
+      uses: actions@checkout@v2
+      with:
+        ref: master
+
+    - name: Clone ANGLE
+      run: |
+        git clone https://github.com/google/angle.git upstream-git
+      shell: bash
+
+    - name: Update ANGLE var
+      run: |
+        echo $(git -C $PWD/upstream-git branch --remote --sort=-committerdate | head -1 | awk -F 'origin/chromium/' '{print $2}' | xargs) > version
+        echo "ANGLE_VERSION=$(cat $PWD/version)" >> $GITHUB_ENV
+      shell: bash
+
+    - name: Commit & Push ANGLE Libraries
+      uses: actions-js/push@master
+      with:
+        branch: master
+        message: "(GHA) updated angle version file to ${{ env.ANGLE_VERSION }}"
+        author_name: "Nitori Kawashiro [bot]"
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+
