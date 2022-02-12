@@ -19,7 +19,7 @@ jobs:
 
     - name: Update ANGLE var
       run: |
-        echo $(git -C $PWD/upstream-git branch --remote --sort=-committerdate | head -1 | awk -F 'origin/chromium/' '{print $2}' | xargs) > version
+        echo $(git -C $PWD/upstream-git branch --remote --sort=-committerdate | sed -n '2p' | awk -F 'origin/chromium/' '{print $2}' | xargs) > version
         echo "ANGLE_VERSION=$(cat $PWD/version)" >> $GITHUB_ENV
       shell: bash
 
