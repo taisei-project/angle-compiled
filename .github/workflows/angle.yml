@@ -22,8 +22,10 @@ jobs:
       with:
         ref: master
 
-    - name: Set vars
-      run: echo "ANGLE_VERSION=$(cat $PWD/version)" >> $GITHUB_ENV
+    - name: Set var
+      run: |
+        echo "ANGLE_VERSION=$(cat $PWD/version)" >> $GITHUB_ENV
+      shell: bash
 
     - name: Clone ANGLE
       run: |
@@ -102,7 +104,7 @@ jobs:
       - name: Download Artifacts From Build
         uses: actions/download-artifact@v2
         with:
-          path: angle/
+          path: lib/
 
       - name: Commit & Push ANGLE Libraries
         uses: actions-js/push@master
