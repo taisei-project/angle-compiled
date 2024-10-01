@@ -18,7 +18,7 @@ jobs:
 
     steps:
     - name: Checkout Repo
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         ref: master
 
@@ -39,14 +39,14 @@ jobs:
 
     - name: Fetch Cached third_party
       id: third-party-cache
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         path: angle/third_party/
         key: thirdparty-${{ env.ANGLE_VERSION }}-${{ matrix.os }}
 
     - name: Fetch Cached angle/tools
       id: angle-tools-cache
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         path: angle/tools/
         key: angletools-${{ env.ANGLE_VERSION }}-${{ matrix.os }}
@@ -82,7 +82,7 @@ jobs:
       shell: bash
 
     - name: Upload Artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       if: success()
       with:
         name: ${{ matrix.name }}-${{ matrix.arch }}-${{ matrix.extension }}
@@ -97,7 +97,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           ref: master
 
@@ -107,7 +107,7 @@ jobs:
         shell: bash
 
       - name: Download Artifacts From Build
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           path: lib/
 
